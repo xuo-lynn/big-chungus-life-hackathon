@@ -1,0 +1,13 @@
+.card {
+  width: 100%;
+  max-width: 40rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--card-border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+  padding: 1.5rem;
+}
