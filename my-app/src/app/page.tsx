@@ -17,6 +17,7 @@ export default function Home() {
   const [places, setPlaces] = useState<MarkerData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analyzedActivities, setAnalyzedActivities] = useState<string[]>([]);
 
   // Selection state: track checked IDs and preserve selection order
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -26,33 +27,59 @@ export default function Home() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setAnalyzedActivities([]);
 
     try {
-      // 1) Geocode location to lat/lng
+      // 1) Geocode location AND parse prompt with Gemini (all in one call)
+      console.log("🔍 Step 1: Geocoding...", { location, prompt });
       const geoRes = await fetch("/api/geocode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ location }),
+        body: JSON.stringify({ location, prompt }),
       });
       const geo = await geoRes.json();
+      console.log("📍 Geocode response:", geo);
+
       if (!geoRes.ok) throw new Error(geo?.error || "Geocoding failed");
 
       const center = { lat: geo.lat as number, lng: geo.lng as number };
       setCoords(center);
 
-      // 2) Hard-coded activities for MVP
-      const activities = ["sightseeing", "lunch", "dessert"];
+      // Get activities from geocode response (already parsed by Gemini)
+      const activities = geo.activities || [
+        "restaurant",
+        "cafe",
+        "tourist attraction",
+      ];
+      console.log("🎯 Using activities:", activities);
+      setAnalyzedActivities(activities);
 
-      // 3) Search places by categories near the location
+      // 2) Search places by AI-generated categories near the location
+      console.log("🔎 Step 2: Searching places...", {
+        lat: center.lat,
+        lng: center.lng,
+        activities,
+        country: geo.countryCode,
+        bbox: geo.bbox,
+      });
       const searchRes = await fetch("/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: center.lat, lng: center.lng, activities }),
+        body: JSON.stringify({
+          lat: center.lat,
+          lng: center.lng,
+          activities,
+          country: geo.countryCode,
+          bbox: geo.bbox,
+        }),
       });
       const search = await searchRes.json();
+      console.log("📌 Search response:", search);
+
       if (!searchRes.ok)
         throw new Error(search?.error || "Place search failed");
 
+      console.log("✅ Found places:", search.places?.length || 0);
       setPlaces(search.places || []);
       // reset selections when new places arrive
       setSelectedIds(new Set());
@@ -106,7 +133,7 @@ export default function Home() {
       >
         <h1 className="hero-title">Plan Your Perfect Day</h1>
         <p className="hero-description">
-          Describe your ideal day and location — we’ll curate a personalized
+          Describe your ideal day and location — we'll curate a personalized
           itinerary just for you.
         </p>
       </motion.div>
@@ -121,13 +148,15 @@ export default function Home() {
           <div className="card-content">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="text-sm text-gray-600">Enter your location</label>
+                <label className="text-sm text-gray-600">
+                  Enter your location
+                </label>
               </div>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g., New York City"
+                placeholder="e.g., Chinatown, New York"
                 className="input mt-2"
               />
 
@@ -140,7 +169,7 @@ export default function Home() {
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., sightseeing, lunch, dessert (MVP uses a preset)"
+                placeholder="e.g., I wanna go biking and then get dessert with my friend"
                 className="input mt-2"
               />
 
@@ -148,6 +177,22 @@ export default function Home() {
                 <p className="text-sm" style={{ color: "#d28fd0" }}>
                   {error}
                 </p>
+              )}
+
+              {analyzedActivities.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  <p className="font-medium mb-1">Searching for:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {analyzedActivities.map((activity, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-purple-100 rounded-full text-xs"
+                      >
+                        {activity}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
 
               <div className="flex justify-center">
@@ -164,7 +209,11 @@ export default function Home() {
       {coords && (
         <>
           <div className="w-full max-w-5xl mt-10">
-            <MapView center={coords} markers={places} selectedPoints={selectedPoints} />
+            <MapView
+              center={coords}
+              markers={places}
+              selectedPoints={selectedPoints}
+            />
           </div>
 
           <div className="mt-8 w-full">
