@@ -13,8 +13,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://big-chungus-life-hackathon.vercel.app"),
   title: "daydream.ai",
   description: "Cute planner for meaningful local adventures",
+  openGraph: {
+    title: "daydream.ai",
+    description: "Cute planner for meaningful local adventures",
+    url: "/",
+    siteName: "daydream.ai",
+    images: ["/opengraph-image"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "daydream.ai",
+    description: "Cute planner for meaningful local adventures",
+    images: ["/twitter-image"],
+  },
   icons: {
     icon: "/cute-icon.svg",
     shortcut: "/cute-icon.svg",
