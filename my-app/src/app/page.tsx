@@ -6,6 +6,7 @@ import { MapPin, Send } from "lucide-react";
 import "./page.css";
 import MapView, { MarkerData } from "@/src/components/MapView";
 import PlacesCarousel from "@/src/components/PlacesCarousel";
+import GLBViewer from "@/src/components/GLBViewer";
 
 export default function Home() {
   const [location, setLocation] = useState("");
@@ -131,10 +132,10 @@ export default function Home() {
         transition={{ duration: 0.8 }}
         className="hero-section"
       >
-        <h1 className="hero-title">Plan Your Perfect Day</h1>
+        <h1 className="hero-title">Plan a Meaningful Day with Local Places</h1>
         <p className="hero-description">
-          Describe your ideal day and location — we'll curate a personalized
-          itinerary just for you.
+          Share what you’d like to do and where — we’ll surface nearby local businesses,
+          community spots, and activities to help you plan something that feels right.
         </p>
       </motion.div>
 
@@ -144,12 +145,15 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.8 }}
       >
-        <div className="card">
+        <div className="card relative overflow-hidden">
+          <div className="absolute inset-0 -z-10 pointer-events-none">
+            <GLBViewer src="/Cinnamoroll (2).glb" height={420} className="opacity-40" />
+          </div>
           <div className="card-content">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="text-sm text-gray-600">
-                  Enter your location
+                  Enter a location to explore nearby options
                 </label>
               </div>
               <input
@@ -162,14 +166,14 @@ export default function Home() {
 
               <div>
                 <label className="text-sm text-gray-600">
-                  What kind of day would you like?
+                  What would you like to do or support?
                 </label>
               </div>
               <input
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., I wanna go biking and then get dessert with my friend"
+                placeholder="e.g., independent coffee shop, artisan market, park meetup, nonprofit thrift"
                 className="input mt-2"
               />
 
@@ -179,31 +183,17 @@ export default function Home() {
                 </p>
               )}
 
-              {analyzedActivities.length > 0 && (
-                <div className="text-sm text-gray-600">
-                  <p className="font-medium mb-1">Searching for:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {analyzedActivities.map((activity, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-purple-100 rounded-full text-xs"
-                      >
-                        {activity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="flex justify-center">
                 <button type="submit" className="button" disabled={loading}>
-                  {loading ? "Generating…" : "Generate Plan"} <Send size={16} />
+                  {loading ? "Searching…" : "Find Local Ideas"} <Send size={16} />
                 </button>
               </div>
             </form>
           </div>
         </div>
       </motion.div>
+
 
       {/* Map + Results */}
       {coords && (
@@ -218,7 +208,7 @@ export default function Home() {
 
           <div className="mt-8 w-full">
             <div className="flex items-center justify-between">
-              <p className="card-text">Suggested stops near your location</p>
+              <p className="card-text">Suggested local places and activities</p>
               <button
                 type="button"
                 onClick={handleResetSelections}

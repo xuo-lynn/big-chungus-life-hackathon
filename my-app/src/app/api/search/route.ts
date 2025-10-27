@@ -23,6 +23,21 @@ export async function POST(req: Request) {
       ? body.bbox
       : undefined;
 
+    const MAX_RADIUS_KM = 50;
+    const haversineKm = (lat1: number, lon1: number, lat2?: number, lon2?: number) => {
+      if (typeof lat2 !== "number" || typeof lon2 !== "number") return Number.POSITIVE_INFINITY;
+      const R = 6371;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
     if (
       typeof lat !== "number" ||
       typeof lng !== "number" ||
@@ -53,9 +68,11 @@ export async function POST(req: Request) {
     for (const q of queries) {
       const query = encodeURIComponent(q);
 
-      // Build the search URL with proximity as the main parameter
-      // Remove bbox and country filters to get more results
-      const url = `https://api.mapbox.com/search/searchbox/v1/forward?q=${query}&proximity=${lng},${lat}&types=poi&limit=5&access_token=${token}`;
+      let url = `https://api.mapbox.com/search/searchbox/v1/forward?q=${query}&proximity=${lng},${lat}&types=poi&limit=5&access_token=${token}`;
+      if (country) url += `&country=${encodeURIComponent(country)}`;
+      if (bbox && bbox.length === 4 && bbox.every((v) => typeof v === "number" && !Number.isNaN(v))) {
+        url += `&bbox=${bbox.join(",")}`;
+      }
 
       console.log(`🔍 Searching: "${q}" near [${lat}, ${lng}]`);
 
@@ -74,6 +91,11 @@ export async function POST(req: Request) {
         const flat = Array.isArray(coords) ? coords[1] : undefined;
         const props = f?.properties || {};
         const placeId = props.mapbox_id || f.id;
+
+        const dist = haversineKm(lat, lng, flat, flng);
+        if (dist > MAX_RADIUS_KM) {
+          continue;
+        }
 
         // Skip if we've already added this place
         if (seenIds.has(placeId)) {

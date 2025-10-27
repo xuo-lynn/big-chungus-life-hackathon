@@ -6,7 +6,7 @@ body {
 
 .hero-section {
   text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 1rem;
 }
 
 .hero-title {
@@ -27,9 +27,9 @@ body {
 .card {
   width: 100%;
   max-width: 45rem;
-  background: #ffe4e6;
+  background: rgba(255, 228, 230, 0.45);
   backdrop-filter: blur(10px);
-  border: 1px solid #ffc1cc;
+  border: 1px solid rgba(255, 193, 204, 0.6);
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   border-radius: 1rem;
   padding: 2.5rem;
@@ -53,7 +53,7 @@ body {
 }
 
 .input {
-  background: #ffe4e6;
+  background: rgba(255, 255, 255, 0.75);
   border: none;
   color: #6b7280;
   padding: 1rem;

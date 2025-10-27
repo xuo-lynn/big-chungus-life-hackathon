@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     const bbox = Array.isArray(feature?.bbox) ? feature.bbox : undefined;
 
     // 2) Parse the prompt with Gemini (if provided)
-    let activities: string[] = ["restaurant", "cafe", "tourist attraction"];
+    let activities: string[] = ["coffee shop", "restaurant", "park", "museum", "bookstore", "artisan market"];
 
     if (prompt && prompt.trim()) {
       const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -87,20 +87,20 @@ export async function POST(req: Request) {
 
       if (googleApiKey) {
         try {
-          const systemPrompt = `You are an activity analyzer. Extract 2-6 specific place types from this request that can be searched on a map.
+          const systemPrompt = `You are a map search query builder. From the user's request, produce 4–8 succinct queries that mix general place types with optional local/community qualifiers.
 
 Rules:
 - Return ONLY a JSON array of strings
-- Each string should be a searchable place type or location-specific query
-- If a location modifier is mentioned (like "chinatown", "downtown"), include it with the activity
+- Each string should be 2–4 words and a searchable map query
+- Favor widely understood categories (e.g., "coffee shop", "park", "museum", "restaurant"), and optionally add local/community qualifiers when helpful (e.g., "local cafe", "artisan market", "community center")
+- Include location modifiers (neighborhood/city) if mentioned: e.g., "coffee shop chinatown", "museum brooklyn"
+- Avoid overly niche phrases; keep queries useful and generic enough for search
 - No explanations, just the array
-- Focus on places, not activities
-- Be specific with location modifiers
 
 Examples:
-"I wanna go biking and get dessert" → ["bike trail", "cycling route", "dessert shop", "bakery"]
+"i wanna do a community event and support local businesses" → ["community center", "farmers market", "coffee shop", "restaurant", "artisan market", "bookstore"]
+"small businesses in chinatown" → ["local cafe chinatown", "bakery chinatown", "bookstore chinatown", "gift shop chinatown"]
 "museum then lunch" → ["museum", "art gallery", "restaurant", "lunch"]
-"library then park then dessert in chinatown" → ["library", "public library", "park", "chinese dessert", "dessert chinatown", "bakery chinatown"]
 "coffee shop in brooklyn then pizza" → ["coffee shop brooklyn", "cafe brooklyn", "pizza", "pizzeria"]
 
 Request: "${prompt}"
@@ -149,10 +149,9 @@ JSON array:`;
                 const parsed = JSON.parse(cleaned);
 
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                  activities = parsed
-                    .filter(
-                      (a: any) => typeof a === "string" && a.trim().length > 0
-                    )
+                  const parsedArray: unknown[] = Array.isArray(parsed) ? parsed : [];
+                  activities = parsedArray
+                    .filter((a): a is string => typeof a === "string" && a.trim().length > 0)
                     .slice(0, 6);
 
                   console.log("✅ Gemini parsed activities:", activities);
